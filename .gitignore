@@ -2,3 +2,4 @@ data/
 pyvenv.cfg
 .idea/
 *.ipynb_checkpoints
+*__pycache__/
