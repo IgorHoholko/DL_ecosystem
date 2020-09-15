@@ -1,4 +1,4 @@
-from detector.datasets.dataset import Dataset
+from detector.datasets.dataset import Dataset, _parse_args
 import os
 import numpy as np
 import h5py
@@ -33,14 +33,37 @@ class SVHNDataset(Dataset):
 
     From https://www.nist.gov/itl/iad/image-group/emnist-dataset"""
 
-    def __init__(self):
+    def __init__(self, subsample_fraction: float = None):
         if not os.path.exists(ESSENTIAL_FILE):
             _download_and_process_cvhn()
 
+        self.subsample_fraction = subsample_fraction
         self.x_train = None
         self.y_train = None
         self.x_test = None
         self.y_test = None
+
+    def load_or_generate_data(self):
+        if not os.path.exists(ESSENTIAL_FILE):
+            _download_and_process_cvhn()
+        with h5py.File(PROCESSED_DATA_FILENAME, "r") as f:
+            self.x_train = f["x_train"][:]
+            self.y_train = f["y_train"][:]
+            self.x_test = f["x_test"][:]
+            self.y_test = f["y_test"][:]
+        self._subsample()
+
+    def _subsample(self):
+        """Only this fraction of data will be loaded."""
+        if self.subsample_fraction is None:
+            return
+        num_train = int(self.x_train.shape[0] * self.subsample_fraction)
+        num_test = int(self.x_test.shape[0] * self.subsample_fraction)
+        self.x_train = self.x_train[:num_train]
+        self.y_train = self.y_train_int[:num_train]
+        self.x_test = self.x_test[:num_test]
+        self.y_test = self.y_test_int[:num_test]
+
 
 
 
@@ -112,13 +135,13 @@ def _sample_to_balance(x, y):
 
 
 def main():
-    """Load EMNIST dataset and print info."""
-    dataset = SVHNDataset()
-    # dataset.load_or_generate_data()
+    """Load SVHN dataset and print info."""
+    args = _parse_args()
+    dataset = SVHNDataset(args.subsample_fraction)
+    dataset.load_or_generate_data()
 
-    # print(dataset)
-    # print(dataset.x_train.shape, dataset.y_train.shape)  # pylint: disable=E1101
-    # print(dataset.x_test.shape, dataset.y_test.shape)  # pylint: disable=E1101
+    print(dataset.x_train.shape, dataset.y_train.shape)  # pylint: disable=E1101
+    print(dataset.x_test.shape, dataset.y_test.shape)  # pylint: disable=E1101
 
 
 if __name__ == "__main__":

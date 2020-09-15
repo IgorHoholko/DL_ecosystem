@@ -1,9 +1,6 @@
 """Dataset class to be extended by dataset-specific classes."""
 from pathlib import Path
 import argparse
-import os
-
-from detector import util
 
 
 class Dataset:

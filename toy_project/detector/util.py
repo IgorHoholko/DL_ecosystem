@@ -8,6 +8,7 @@ from typing import Union
 from urllib.request import urlopen, urlretrieve
 import hashlib
 import os
+import yaml
 
 import numpy as np
 import cv2
@@ -89,3 +90,8 @@ def download_urls(urls, filenames):
             except Exception as e:  # pylint: disable=broad-except
                 print("Error", e)
 
+def read_yaml(path):
+    with open(path, 'r') as f:
+        f_str = f.read()
+        file = yaml.load(f_str, Loader=yaml.FullLoader)
+    return file
