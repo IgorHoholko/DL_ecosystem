@@ -1,3 +1,4 @@
 data/
 pyvenv.cfg
 .idea/
+*.ipynb_checkpoints
