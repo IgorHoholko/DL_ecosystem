@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 import numpy as np
 import importlib
 from torchvision import transforms
@@ -50,29 +50,29 @@ class Model(torch.nn.Module):
         x = torch.unsqueeze(x, 0)
         return x
 
-    def evaluate_loader(self, loader, device):
+    def evaluate_loader(self, loader, device, loss_function = None) -> Union[tuple, float]:
         dtype = torch.float32
 
         correct = 0
+        total_loss = 0
         for batch_idx, batch_data in enumerate(tqdm(loader)):
             data, target = batch_data['image'].to(device, dtype), batch_data['label'].to(device, dtype)
             output = self.forward(data)
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
-
+            if loss_function:
+                total_loss += loss_function(output, target.long()).item()
+        if loss_function:
+            return correct / len(loader.dataset), total_loss
         return correct / len(loader.dataset)
 
-    def evaluate(self, x: np.ndarray, y: np.ndarray, device, batch_size: int = 16):
+    def evaluate(self, x: np.ndarray, y: np.ndarray, device,
+                 batch_size: int = 16, loss_function = None) -> Union[tuple, float]:
         sequence = DatasetSequence(x, y)
         loader = DataLoader(dataset=sequence,
                             batch_size=batch_size,
                             shuffle=False, )
-        return self.evaluate_loader(loader, device, batch_size)
-
-
-
-        preds = self.network(x)
-        return np.mean(np.argmax(preds, -1) == np.argmax(y, -1))
+        return self.evaluate_loader(loader, device, loss_function)
 
     def loss(self):
         return "CrossEntropyLoss"
@@ -81,7 +81,7 @@ class Model(torch.nn.Module):
         return 'Accuracy'
 
     def load_weights(self):
-        self.network.load_weights(self.weights_filename)
+        self.network.load_state_dict(torch.load(self.weights_filename))
 
     def save_weights(self):
-        self.network.save_weights(self.weights_filename)
+        torch.save(self.network.state_dict(), self.weights_filename)

@@ -59,10 +59,14 @@ class SVHNDataset(Dataset):
             return
         num_train = int(self.x_train.shape[0] * self.subsample_fraction)
         num_test = int(self.x_test.shape[0] * self.subsample_fraction)
-        self.x_train = self.x_train[:num_train]
-        self.y_train = self.y_train[:num_train]
-        self.x_test = self.x_test[:num_test]
-        self.y_test = self.y_test[:num_test]
+        sub_train_ids = np.random.choice(np.arange(self.x_train.shape[0]),
+                                         size=num_train, replace=False)
+        sub_test_ids = np.random.choice(np.arange(self.x_test.shape[0]),
+                                         size=num_test, replace=False)
+        self.x_train = self.x_train[sub_train_ids]
+        self.y_train = self.y_train[sub_train_ids]
+        self.x_test = self.x_test[sub_test_ids]
+        self.y_test = self.y_test[sub_test_ids]
 
 
 
