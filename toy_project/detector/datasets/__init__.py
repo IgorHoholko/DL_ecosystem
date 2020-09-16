@@ -3,4 +3,4 @@ from .dataset_sequence import DatasetSequence
 
 from .augmentations import get_augmentations
 
-from .dataloader import get_loader
+from .dataloader import get_loaders

@@ -7,14 +7,9 @@ import numpy as np
 
 
 
-def get_loader(config, ):
-    """Builds and returns Dataloader for MNIST and SVHN dataset."""
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225])
-    ])
+def get_loaders(config):
+    """Builds and returns Dataloader for SVHN* dataset."""
+
     augmentations = None
     if config['dataset'].get('augmentations', None):
         augmentations = get_augmentations()
@@ -25,7 +20,7 @@ def get_loader(config, ):
 
     svhn = SVHNDataset()
     svhn.load_or_generate_data()
-    # if we had more datasets, we would combine them here..
+    #TODO: if we had more datasets, we would combine them here..
 
     x_train = svhn.x_train
     y_train = svhn.y_train
@@ -44,16 +39,16 @@ def get_loader(config, ):
     y_test = svhn.y_test
 
 
-    train_dataset = DatasetSequence(x_train, y_train, transform, augmentations)
+    train_dataset = DatasetSequence(x_train, y_train, augmentations)
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=config.get('batch_size'),
                               shuffle=True,)
-    test_dataset = DatasetSequence(x_test, y_test, transform)
+    test_dataset = DatasetSequence(x_test, y_test)
     test_loader = DataLoader(dataset=test_dataset,
                               batch_size=config.get('batch_size'),
                               shuffle=False,)
     if validation_ration:
-        val_dataset = DatasetSequence(x_val, y_val, transform)
+        val_dataset = DatasetSequence(x_val, y_val)
         val_loader = DataLoader(dataset=val_dataset,
                                  batch_size=config.get('batch_size'),
                                  shuffle=False,)

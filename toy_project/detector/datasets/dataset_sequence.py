@@ -5,15 +5,19 @@ from torchvision import transforms
 
 class DatasetSequence(Dataset):
     def __init__(self, x, y,
-                 transforms = None,
                  augments = None
                  ):
         self.x = x
         self.y = y
-        self.transforms = transforms
         self.augments = augments
 
         self.n = x.shape[0]
+        self.transforms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225])
+        ])
 
     def __len__(self):
         return self.n

@@ -17,7 +17,7 @@ RAW_DATA_DIRNAME = Dataset.data_dirname() / "raw" / "svhn_dataset"
 PROCESSED_DATA_DIRNAME = Dataset.data_dirname() / "processed" / "svhn_dataset"
 PROCESSED_DATA_FILENAME = PROCESSED_DATA_DIRNAME / 'data.h5'
 
-ESSENTIAL_FILE = Dataset.data_dirname() / 'loaded.flag'
+ESSENTIAL_FILE = Dataset.data_dirname() / 'svhn_loaded.flag'
 
 
 class SVHNDataset(Dataset):
@@ -60,9 +60,9 @@ class SVHNDataset(Dataset):
         num_train = int(self.x_train.shape[0] * self.subsample_fraction)
         num_test = int(self.x_test.shape[0] * self.subsample_fraction)
         self.x_train = self.x_train[:num_train]
-        self.y_train = self.y_train_int[:num_train]
+        self.y_train = self.y_train[:num_train]
         self.x_test = self.x_test[:num_test]
-        self.y_test = self.y_test_int[:num_test]
+        self.y_test = self.y_test[:num_test]
 
 
 
@@ -73,7 +73,7 @@ def _download_and_process_cvhn():
     curdir = os.getcwd()
     os.chdir(RAW_DATA_DIRNAME)
     urls = [URL + '/' + filename for filename in FILE_NAMES]
-    # download_urls(urls, FILE_NAMES)
+    download_urls(urls, FILE_NAMES)
     _process_raw_dataset()
     os.chdir(curdir)
 
@@ -97,6 +97,10 @@ def _process_raw_dataset():
     x, y = load_mat(TEST_FILE_NAMES[0])
     x_test = x.transpose((3, 0, 1, 2))
     y_test = y[:, 0]
+
+    # replace label "10" which represents 0 to label "0"
+    y_train[np.where(y_train == 10)] = 0
+    y_test[np.where(y_test == 10)] = 0
 
     if SAMPLE_TO_BALANCE:
         print("Balancing classes to reduce amount of data...")
