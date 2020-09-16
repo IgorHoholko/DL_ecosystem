@@ -1,7 +1,6 @@
 """Utility functions for detector module."""
 import base64
 
-# Hide lines above until Lab 8
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from pathlib import Path
 from typing import Union

@@ -36,6 +36,9 @@ class Model(torch.nn.Module):
                 std=[0.229, 0.224, 0.225]),
         ])
 
+    def forward(self, x):
+        return self.network(x)
+
     @property
     def weights_filename(self) -> str:
         DIRNAME.mkdir(parents=True, exist_ok=True)
@@ -57,6 +60,9 @@ class Model(torch.nn.Module):
 
     def loss(self):
         return "CrossEntropyLoss"
+
+    def metric(self):
+        return 'Accuracy'
 
     def load_weights(self):
         self.network.load_weights(self.weights_filename)

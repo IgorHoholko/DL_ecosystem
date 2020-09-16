@@ -8,24 +8,25 @@ import numpy as np
 
 
 def get_loaders(config):
-    """Builds and returns Dataloader for SVHN* dataset."""
+    """Builds and returns Dataloaders for SVHN* dataset in format:
+        (train_loader, val_loader, test_loader)"""
 
     augmentations = None
-    if config['dataset'].get('augmentations', None):
+    if config['dataset_args'].get('augmentations', None):
         augmentations = get_augmentations()
 
     random_seed = config.get('random_seed', None)
     if random_seed:
         np.random.seed(random_seed)
 
-    svhn = SVHNDataset()
+    svhn = SVHNDataset(subsample_fraction=config.get('subsample_fraction', None))
     svhn.load_or_generate_data()
     #TODO: if we had more datasets, we would combine them here..
 
     x_train = svhn.x_train
     y_train = svhn.y_train
 
-    validation_ration = config['dataset'].get('validation_ration', None)
+    validation_ration = config['dataset_args'].get('validation_ration', None)
     if validation_ration:
         n_samples = x_train.shape[0]
         val_idxs = np.random.choice(np.arange(n_samples),
@@ -41,21 +42,21 @@ def get_loaders(config):
 
     train_dataset = DatasetSequence(x_train, y_train, augmentations)
     train_loader = DataLoader(dataset=train_dataset,
-                              batch_size=config.get('batch_size'),
+                              batch_size=config['train_args'].get('batch_size'),
                               shuffle=True,)
     test_dataset = DatasetSequence(x_test, y_test)
     test_loader = DataLoader(dataset=test_dataset,
-                              batch_size=config.get('batch_size'),
+                              batch_size=config['train_args'].get('batch_size'),
                               shuffle=False,)
     if validation_ration:
         val_dataset = DatasetSequence(x_val, y_val)
         val_loader = DataLoader(dataset=val_dataset,
-                                 batch_size=config.get('batch_size'),
+                                 batch_size=config['train_args'].get('batch_size'),
                                  shuffle=False,)
 
         return (train_loader, val_loader, test_loader)
     else:
-        return (train_loader, test_loader)
+        return (train_loader, None, test_loader)
 
 
 
