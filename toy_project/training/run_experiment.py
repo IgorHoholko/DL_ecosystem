@@ -18,23 +18,22 @@ def run_experiment(experiment_config: Dict, save_weights: bool, gpu_ind: int, us
     ----------
     experiment_config (dict)
         Of the form
-        {
-            "dataset": "EmnistLinesDataset",
-            "dataset_args": {
-                "max_overlap": 0.4,
-                "subsample_fraction": 0.2
-            },
-            "model": "LineModel",
-            "network": "line_cnn_all_conv",
-            "network_args": {
-                "window_width": 14,
-                "window_stride": 7
-            },
-            "train_args": {
-                "batch_size": 128,
-                "epochs": 10
-            }
-        }
+        {'random_seed': 24,
+         'project': 'toy',
+         'dataset_args':{
+              'augmentations': True,
+              'num_workers': 1,
+              'validation_ration': 0.1,
+              'subsample_fraction': 1.0},
+         'model': 'PredictorModel',
+         'network': 'LeNet',
+         'network_args': None,
+         'train_args': {
+                'batch_size': 128,
+                'epochs': 50},
+         'optimizer': 'Adam',
+         'optimizer_args': {
+                'lr': 0.001}}
     save_weights (bool)
         If True, will save the final model weights to a canonical location (see Model in models/base.py)
     gpu_ind (int)
