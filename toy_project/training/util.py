@@ -7,6 +7,8 @@ import wandb
 import sys
 import os
 
+from training import CallbackContainer
+
 def loss_function(input, target):
     criteria = torch.nn.CrossEntropyLoss()
     loss = criteria(input, target)
@@ -20,15 +22,22 @@ def train_model(
         epochs : int,
         use_wandb : bool,
         optimizer : torch.optim.Optimizer,
-        device):
+        device,
+        callbacks: CallbackContainer = CallbackContainer([]),
+        save_weights: bool = True):
     model.to(device)
-    dtype = torch.float32
 
+    dtype = torch.float32
+    logs = {}
+    callbacks.on_train_begin()
     for epoch in range(epochs):
         model.train()
         t = tqdm(train_loader, desc=f'Epoch{epoch+1}/{epochs}')
         total_loss = 0
         correct = 0
+        logs.update({"epoch": epoch})
+
+
         for batch_idx, batch_data in enumerate(t):
             data, target = batch_data['image'].to(device, dtype), batch_data['label'].to(device, dtype)
             # optimizer.zero_grad()
@@ -44,22 +53,34 @@ def train_model(
             correct += pred.eq(target.view_as(pred)).sum().item()
             total_loss += loss.item()
             t.set_description('ML (loss=%g)' % float(loss))
-        print(
-            "Train Epoch: {} [ Accuracy: ({:.0f}%)]\tLoss: {:.6f}".format(
-                epoch, 100.0 * correct / len(train_loader.dataset), loss.item()
-            ))
-        wandb.log({'epoch': epoch, 'loss': loss.item(),
-                   'accuracy': correct / len(train_loader.dataset),
-                  'total_loss': total_loss})
+        logs.update({"train_loss": total_loss / len(train_loader.dataset),
+                      "train_accuracy" : correct / len(train_loader.dataset)})
 
         if val_loader:
             model.eval()
             with torch.no_grad():
-                accuracy = model.evaluate_loader(val_loader, device)
-            wandb.log({'val_accuracy': accuracy})
-            print(f"Val accuracy: {accuracy:.2f}")
+                accuracy, total_loss = model.evaluate_loader(val_loader, device, loss_function)
 
-        # wandb.log()
+        logs.update({"val_loss": total_loss / len(val_loader.dataset),
+                      "val_accuracy": accuracy})
+        print(
+            f"Epoch: {epoch} \n "
+            f"  Train [ Accuracy: ({logs['train_accuracy']:.2f})]\tLoss: {logs['train_loss']:.8f}\n"
+            f"  Valid [ Accuracy: ({logs['val_accuracy']:.2f})]\tLoss: {logs['val_loss']:.8f}"
+            )
+        if use_wandb:
+            wandb.log(logs)
+
+        callbacks.on_epoch_end(epoch, logs)
+
+        if logs.get('stop_training', False):
+            break
+        elif save_weights:
+            model.save_weights()
+
+    callbacks.on_train_end()
+    if use_wandb:
+        wandb.log(logs)
 
 
 def test_model(
@@ -67,35 +88,25 @@ def test_model(
         test_loader: DataLoader,
         use_wandb : bool,
         device):
-    pass
-
-
-def test(model, device, test_loader, loss_function, epoch, writer):
-    model.eval()
     model.to(device)
-    test_loss = 0
+
+    dtype = torch.float32
+    logs = {}
     correct = 0
+
+    model.eval()
     with torch.no_grad():
-        for idx, batch_data in enumerate(tqdm(test_loader)):
-            data, target = batch_data.images.to(device), batch_data.labels.to(device)
+        for batch_idx, batch_data in enumerate(tqdm(test_loader)):
+            data, target = batch_data['image'].to(device, dtype), batch_data['label'].to(device, dtype)
+
             output = model(data)
-            test_loss += loss_function(output, target).sum().item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    test_loss /= len(test_loader.dataset)
+        logs.update({"test_accuracy": correct / len(test_loader.dataset)})
 
-    print(
-        "\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
-            test_loss,
-            correct,
-            len(test_loader.dataset),
-            100.0 * correct / len(test_loader.dataset),
-        )
-    )
-    writer.add_scalar("test_loss_plot", test_loss, global_step=epoch)
-    writer.add_scalar(
-        "test_accuracy_plot",
-        100.0 * correct / len(test_loader.dataset),
-        global_step=epoch,
-    )
+        print(f"  Test [ Accuracy: ({logs['test_accuracy']:.2f})]")
+        if use_wandb:
+            wandb.log(logs)
+
+

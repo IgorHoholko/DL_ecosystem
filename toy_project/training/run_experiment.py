@@ -8,6 +8,7 @@ import argparse
 from detector.datasets import get_loaders
 from detector.util import read_yaml
 from training.util import train_model, test_model
+from training import EarlyStopping, CallbackContainer
 
 
 
@@ -75,12 +76,16 @@ def run_experiment(experiment_config: Dict, save_weights: bool, gpu_ind: int, us
     #     **experiment_config.get("train_args", {}),
     # }
     experiment_config["experiment_group"] = experiment_config.get("experiment_group", None)
-    experiment_config["gpu_ind"] = gpu_ind
 
     if use_wandb:
         wandb.init(project='toy', config=experiment_config)
         wandb.login()
         wandb.watch(model)
+
+    callbacks = []
+    if experiment_config['callbacks'].get('useEarlyStopping', None):
+        callbacks.append(EarlyStopping(monitor='val_loss'))
+    callbacks = CallbackContainer(callbacks)
 
     train_model(
         model,
@@ -89,11 +94,16 @@ def run_experiment(experiment_config: Dict, save_weights: bool, gpu_ind: int, us
         epochs=experiment_config["train_args"]["epochs"],
         use_wandb=use_wandb,
         optimizer = optimizer,
-        device = device
+        device = device,
+        callbacks = callbacks,
+        save_weights = save_weights
     )
 
-    # if use_wandb:
-    #     wandb.log({"test_metric": score})
+    test_model(
+        model,
+        test_loader,
+        use_wandb = use_wandb,
+        device = device)
 
     if save_weights:
         model.save_weights()
