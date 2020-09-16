@@ -3,6 +3,7 @@ from typing import Dict, Callable
 import numpy as np
 import importlib
 from torchvision import transforms
+from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -49,11 +50,26 @@ class Model(torch.nn.Module):
         x = torch.unsqueeze(x, 0)
         return x
 
-    def evaluate(self, x: np.ndarray, y: np.ndarray, batch_size: int = 16):
+    def evaluate_loader(self, loader, device):
+        dtype = torch.float32
+
+        correct = 0
+        for batch_idx, batch_data in enumerate(tqdm(loader)):
+            data, target = batch_data['image'].to(device, dtype), batch_data['label'].to(device, dtype)
+            output = self.forward(data)
+            pred = output.argmax(dim=1, keepdim=True)
+            correct += pred.eq(target.view_as(pred)).sum().item()
+
+        return correct / len(loader.dataset)
+
+    def evaluate(self, x: np.ndarray, y: np.ndarray, device, batch_size: int = 16):
         sequence = DatasetSequence(x, y)
         loader = DataLoader(dataset=sequence,
-                             batch_size=batch_size,
-                             shuffle=False, )
+                            batch_size=batch_size,
+                            shuffle=False, )
+        return self.evaluate_loader(loader, device, batch_size)
+
+
 
         preds = self.network(x)
         return np.mean(np.argmax(preds, -1) == np.argmax(y, -1))

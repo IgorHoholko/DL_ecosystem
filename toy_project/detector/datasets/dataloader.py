@@ -19,7 +19,7 @@ def get_loaders(config):
     if random_seed:
         np.random.seed(random_seed)
 
-    svhn = SVHNDataset(subsample_fraction=config.get('subsample_fraction', None))
+    svhn = SVHNDataset(subsample_fraction=config['dataset_args'].get('subsample_fraction', None))
     svhn.load_or_generate_data()
     #TODO: if we had more datasets, we would combine them here..
 
