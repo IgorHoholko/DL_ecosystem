@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 from typing import Union
 from tqdm import tqdm
 import torch
+import wandb
 
 import sys
 import os
@@ -20,12 +21,14 @@ def train_model(
         use_wandb : bool,
         optimizer : torch.optim.Optimizer,
         device):
-    model.train()
     model.to(device)
     dtype = torch.float32
-    correct = 0
+
     for epoch in range(epochs):
+        model.train()
         t = tqdm(train_loader, desc=f'Epoch{epoch+1}/{epochs}')
+        total_loss = 0
+        correct = 0
         for batch_idx, batch_data in enumerate(t):
             data, target = batch_data['image'].to(device, dtype), batch_data['label'].to(device, dtype)
             # optimizer.zero_grad()
@@ -39,12 +42,24 @@ def train_model(
             optimizer.step()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
+            total_loss += loss.item()
             t.set_description('ML (loss=%g)' % float(loss))
         print(
-            "Train Epoch: {} [ ({:.0f}%)]\tLoss: {:.6f}".format(
+            "Train Epoch: {} [ Accuracy: ({:.0f}%)]\tLoss: {:.6f}".format(
                 epoch, 100.0 * correct / len(train_loader.dataset), loss.item()
-            )
-        )
+            ))
+        wandb.log({'epoch': epoch, 'loss': loss.item(),
+                   'accuracy': correct / len(train_loader.dataset),
+                  'total_loss': total_loss})
+
+        if val_loader:
+            model.eval()
+            with torch.no_grad():
+                accuracy = model.evaluate_loader(val_loader, device)
+            wandb.log({'val_accuracy': accuracy})
+            print(f"Val accuracy: {accuracy:.2f}")
+
+        # wandb.log()
 
 
 def test_model(
