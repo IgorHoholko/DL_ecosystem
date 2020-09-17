@@ -148,7 +148,9 @@ class EarlyStopping(Callback):
             if (current_loss - self.best_loss) < -self.min_delta:
                 self.best_loss = current_loss
                 self.wait = 1
+                logs['loss_improved'] = True
             else:
+                logs['loss_improved'] = False
                 if self.wait >= self.patience:
                     self.stopped_epoch = epoch + 1
                     logs['stop_training'] = True

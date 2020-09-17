@@ -75,7 +75,7 @@ def train_model(
 
         if logs.get('stop_training', False):
             break
-        elif save_weights:
+        elif save_weights and logs['loss_improved']:
             model.save_weights()
 
     callbacks.on_train_end()
