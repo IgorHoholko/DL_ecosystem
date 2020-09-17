@@ -2,20 +2,23 @@ random_seed : 24
 project: 'toy'
 
 dataset_args:
-  augmentations: true
-  num_workers: 1
+  augmentations: false
+  num_workers: -1
   validation_ration: .1
-  subsample_fraction: 1.
+  subsample_fraction: 1
 
 model: "PredictorModel"
 network: "LeNet"
 network_args:
 
 train_args:
-  batch_size: 128
+  batch_size: 1024
   epochs: 50
 
 optimizer: Adam
 optimizer_args:
   lr: .001
+
+callbacks:
+  useEarlyStopping: true
 
