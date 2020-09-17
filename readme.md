@@ -4,7 +4,8 @@ The project is about creating infrastructure for DL projects which I can take as
 
 The task about recognition houses plate numbers is taken as an example.
 
-![Test Image 1](imgs/dataset.png)
+<img src="imgs/dataset.PNG">
+
 
 **Run**:
 
