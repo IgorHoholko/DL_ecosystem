@@ -42,6 +42,11 @@ def run_experiment(experiment_config: Dict, save_weights: bool, gpu_ind: int, us
     use_wandb (bool)
         sync training run to wandb
     """
+    if experiment_config.get('random_seed', None):
+        torch.manual_seed(experiment_config['random_seed'])
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
 
     if torch.cuda.is_available():
         try:
